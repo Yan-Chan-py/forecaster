@@ -30,13 +30,18 @@ func NewWeatherClient(cfg *config.APIconfig) (*WeatherClient, error) {
 	}, nil
 }
 
-func (c *WeatherClient) GetWeather(lat float64, lon float64,unit Unit) (*WeatherResponse, *ErrorResponse) {
+func (c *WeatherClient) GetWeather(lat float64, lon float64,opts *RequestOptions) (*WeatherResponse, *ErrorResponse) {
 	ctx := context.Background()
-    fmt.Println(unit)
-	requestUrl := fmt.Sprintf("%s?lat=%f&lon=%f&units=%s&appid=%s", c.baseURL, lat, lon,unit ,c.key)
+    var requestUrl string
+    if opts == nil {
+	requestUrl = fmt.Sprintf("%s?lat=%f&lon=%f&appid=%s", c.baseURL, lat, lon,c.key)
+    } else {
+	requestUrl = fmt.Sprintf("%s?lat=%f&lon=%f&units=%s&lang=%s&appid=%s", c.baseURL, lat, lon,opts.Unit,opts.Language ,c.key)
+    }
+
 	fmt.Println(requestUrl)
 	req, err := http.NewRequest("GET", requestUrl, nil)
-	ctxWithTimeout, cancel := context.WithTimeout(ctx, time.Duration(200)*time.Millisecond)
+	ctxWithTimeout, cancel := context.WithTimeout(ctx, time.Duration(700)*time.Millisecond)
 	defer cancel()
 	req = req.WithContext(ctxWithTimeout)
 	if err != nil {
@@ -59,12 +64,6 @@ func (c *WeatherClient) GetWeather(lat float64, lon float64,unit Unit) (*Weather
 
 func (c *WeatherClient) doRequest(req *http.Request, w *WeatherResponse) *ErrorResponse {
 	res, err := c.client.Do(req)
-    if err != nil {
-        return &ErrorResponse {
-            Message:"cannot proceed request",
-            Cod:"502",
-        }
-    }
     select {
     case <-req.Context().Done():
     		return &ErrorResponse{
@@ -72,6 +71,12 @@ func (c *WeatherClient) doRequest(req *http.Request, w *WeatherResponse) *ErrorR
 			Cod:     "504",
 		}
     default: 
+        if err != nil {
+        return &ErrorResponse {
+            Message:"cannot proceed request",
+            Cod:"502",
+        }
+    }
     	defer func() {
 		_ = res.Body.Close()
 	}()
@@ -100,3 +105,5 @@ func (c *WeatherClient) doRequest(req *http.Request, w *WeatherResponse) *ErrorR
 	}
 	return nil
 }
+
+

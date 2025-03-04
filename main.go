@@ -17,7 +17,7 @@ func main() {
 	if err != nil {
 		slog.Error("cannot create client")
 	}
-	weather, errResp := client.GetWeather(31.84, 24.031,0)
+    weather, errResp := client.GetWeather(31.84, 24.031,nil)
 	if errResp != nil {
 		fmt.Println(errResp)
 	}

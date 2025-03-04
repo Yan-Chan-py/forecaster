@@ -91,7 +91,7 @@ func (u Unit)String() string {
     return [...]string{"metric","standart","imperial"}[u]
 }
 type RequestOptions struct {
-    unit Unit
+    Unit Unit
     Language Lang
 
 }

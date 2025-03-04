@@ -37,7 +37,7 @@ func TestGetWeather_Success(t *testing.T) {
 	}
 
 	client := newTestClient(mockHandler)
-	weather, errResp := client.GetWeather(51.5074, -0.1278,0) // London Coordinates
+	weather, errResp := client.GetWeather(51.5074, -0.1278,nil) // London Coordinates
 
 	assert.Nil(t, errResp, "Error response should be nil")
 	assert.NotNil(t, weather, "Weather response should not be nil")
@@ -46,7 +46,7 @@ func TestGetWeather_Success(t *testing.T) {
 // Test Timeout Handling
 func TestGetWeather_Timeout(t *testing.T) {
 	mockHandler := func(w http.ResponseWriter, r *http.Request) {
-        time.Sleep(150 * time.Millisecond)
+        time.Sleep(200 * time.Millisecond)
 		w.WriteHeader(http.StatusOK)
 		w.Write([]byte(`{"temperature": 22, "condition": "Cloudy"}`))
 	}
@@ -54,14 +54,14 @@ func TestGetWeather_Timeout(t *testing.T) {
 	client := newTestClient(mockHandler)
 
 	start := time.Now()
-	weather, errResp := client.GetWeather(51.5074, -0.1278,0) // London
+	weather, errResp := client.GetWeather(51.5074, -0.1278,nil) // London
 
 	duration := time.Since(start)
 
 	assert.Nil(t, weather, "Weather response should be nil on timeout")
 	assert.NotNil(t, errResp, "Error response should not be nil")
 	assert.Equal(t, "cannot do request, deadline expired", errResp.Message)
-	assert.Less(t, duration.Milliseconds(), int64(200), "Request should timeout before 2s")
+	assert.Less(t, duration.Milliseconds(), int64(250), "Request should timeout before 2s")
 }
 
 // Test API Returning Non-200 Response
@@ -72,7 +72,7 @@ func TestGetWeather_ServerError(t *testing.T) {
 	}
 
 	client := newTestClient(mockHandler)
-	weather, errResp := client.GetWeather(51.5074, -0.1278,0)
+	weather, errResp := client.GetWeather(51.5074, -0.1278,nil)
 
 	assert.Nil(t, weather, "Weather response should be nil")
 	assert.NotNil(t, errResp, "Error response should not be nil")
@@ -87,7 +87,7 @@ func TestGetWeather_RequestFailure(t *testing.T) {
 	}
 
 	client := newTestClient(mockHandler)
-	weather, errResp := client.GetWeather(51.5074, -0.1278,0)
+	weather, errResp := client.GetWeather(51.5074, -0.1278,nil)
 
 	assert.Nil(t, weather, "Weather response should be nil")
 	assert.NotNil(t, errResp, "Error response should not be nil")
@@ -102,7 +102,7 @@ func TestGetWeather_InvalidJSON(t *testing.T) {
 	}
 
 	client := newTestClient(mockHandler)
-	weather, errResp := client.GetWeather(51.5074, -0.1278,0)
+	weather, errResp := client.GetWeather(51.5074, -0.1278,nil)
 
 	assert.Nil(t, weather, "Weather response should be nil")
 	assert.NotNil(t, errResp, "Error response should not be nil")
