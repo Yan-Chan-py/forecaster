@@ -6,6 +6,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/Yan-Chan-py/forecaster/config"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -26,6 +27,9 @@ func newTestClient(handler http.HandlerFunc) *WeatherClient {
 		client:  &mockHTTPClient{handler: handler},
 		baseURL: "http://mockapi.com",
 		key:     "test-api-key",
+        cfg : &config.APIconfig{
+            Timeout: 2 * time.Second,
+        },
 	}
 }
 
@@ -46,7 +50,7 @@ func TestGetWeather_Success(t *testing.T) {
 // Test Timeout Handling
 func TestGetWeather_Timeout(t *testing.T) {
 	mockHandler := func(w http.ResponseWriter, r *http.Request) {
-        time.Sleep(200 * time.Millisecond)
+        time.Sleep(3* time.Second)
 		w.WriteHeader(http.StatusOK)
 		w.Write([]byte(`{"temperature": 22, "condition": "Cloudy"}`))
 	}
@@ -61,7 +65,7 @@ func TestGetWeather_Timeout(t *testing.T) {
 	assert.Nil(t, weather, "Weather response should be nil on timeout")
 	assert.NotNil(t, errResp, "Error response should not be nil")
 	assert.Equal(t, "cannot do request, deadline expired", errResp.Message)
-	assert.Less(t, duration.Milliseconds(), int64(250), "Request should timeout before 2s")
+	assert.Less(t, duration.Milliseconds(), time.Second, "Request should timeout before 2s")
 }
 
 // Test API Returning Non-200 Response

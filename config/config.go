@@ -1,18 +1,21 @@
 package config
 
 import (
-	"gopkg.in/yaml.v2"
 	"log/slog"
 	"os"
 	"path/filepath"
+	"time"
+
+	"gopkg.in/yaml.v2"
 )
 
 type APIconfig struct {
 	BaseUrl string `yaml:"BASE_URL"`
 	APIkey  string `yaml:"API_KEY"`
+    Timeout time.Duration
 }
 
-func NewConfig() (*APIconfig, error) {
+func NewConfig(timeout time.Duration) (*APIconfig, error) {
 	var config *APIconfig = &APIconfig{}
 	configPath, err := GetconfigPath()
 	defer func() {
@@ -31,6 +34,9 @@ func NewConfig() (*APIconfig, error) {
 	if err != nil {
 		return nil, err
 	}
+    if timeout != 0 {
+        config.Timeout = timeout
+    }
 
 	decoder := yaml.NewDecoder(f)
 	if err := decoder.Decode(config); err != nil {

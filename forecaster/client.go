@@ -7,7 +7,6 @@ import (
 	"fmt"
 	"log/slog"
 	"net/http"
-	"time"
 
 	"github.com/Yan-Chan-py/forecaster/config"
 )
@@ -16,6 +15,7 @@ type WeatherClient struct {
 	client  HTTPClient
 	baseURL string
 	key     string
+    cfg *config.APIconfig
 }
 
 func NewWeatherClient(cfg *config.APIconfig) (*WeatherClient, error) {
@@ -24,9 +24,12 @@ func NewWeatherClient(cfg *config.APIconfig) (*WeatherClient, error) {
 		return nil, errors.New("invalid config")
 	}
 	return &WeatherClient{
-		client:  &http.Client{},
+		client:  &http.Client{
+            Timeout: cfg.Timeout,
+        },
 		baseURL: cfg.BaseUrl,
 		key:     cfg.APIkey,
+        cfg: cfg,
 	}, nil
 }
 
@@ -41,18 +44,24 @@ func (c *WeatherClient) GetWeather(lat float64, lon float64,opts *RequestOptions
 
 	fmt.Println(requestUrl)
 	req, err := http.NewRequest("GET", requestUrl, nil)
-	ctxWithTimeout, cancel := context.WithTimeout(ctx, time.Duration(700)*time.Millisecond)
-	defer cancel()
-	req = req.WithContext(ctxWithTimeout)
-	if err != nil {
-		slog.Error("cannot create request")
-	}
+    if err != nil {
+        slog.Error("cannot create request")
+    }
+    switch c.cfg.Timeout {
+    case   0:
+        req = req.WithContext(ctx)
+    default:
+        ctxWithTimeout,cancel := context.WithTimeout(ctx,c.cfg.Timeout)
+        req = req.WithContext(ctxWithTimeout)
+        defer cancel()
+    }
+	
     weather := &WeatherResponse{} 
 	errResp := c.doRequest(req, weather)
 	if errResp != nil {
 		return nil, errResp
 	}
-    if weather.Weather == nil && errResp == nil  {
+    if len(weather.Weather) == 0 && errResp == nil  {
         return nil, &ErrorResponse{
             Cod:"511",
             Message: " unknown error",
